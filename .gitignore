@@ -1,0 +1,31 @@
+# Firebase設定ファイル
+.firebaserc
+firebase-debug.log
+firebase-debug.*.log
+
+# サービスアカウントキー
+scripts/serviceAccountKey.json
+
+# Node modules
+node_modules/
+functions/node_modules/
+
+# ビルド成果物
+dist/
+.cache/
+
+# ローカル環境変数
+.env
+.env.local
+.env.*.local
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
