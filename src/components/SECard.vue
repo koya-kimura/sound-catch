@@ -52,7 +52,7 @@
         <!-- 閉じるボタン -->
         <button class="quiz-close-btn" @click="closeQuizModal">×</button>
         
-        <h3>この曲はなんでしょう？</h3>
+        <h3>{{ se.quizQuestion || 'この曲はなんでしょう？' }}</h3>
         <input 
           v-model="quizAnswer" 
           type="text" 
@@ -126,20 +126,20 @@ const isQuizSubmitting = ref(false);
 
 // 画像URLを取得
 const loadImage = async () => {
-  // 未取得の場合は直接sample.pngを読み込む
-  if (!props.acquired) {
-    const result = await getSEImageURL('sample');
-    if (result.success && result.url) {
-      imageUrl.value = result.url;
-    }
-    return;
-  }
-  
-  // 取得済みの場合は通常通り画像を読み込む
+  // まず実際のSE画像を試す
   const result = await getSEImageURL(props.se.seId);
+  
   if (result.success && result.url) {
+    // 実際の画像が存在する場合はそれを使用
     imageUrl.value = result.url;
+  } else if (!props.acquired) {
+    // 画像が存在せず、未取得の場合のみsample.pngを使用
+    const fallbackResult = await getSEImageURL('sample');
+    if (fallbackResult.success && fallbackResult.url) {
+      imageUrl.value = fallbackResult.url;
+    }
   }
+  // 取得済みで画像がない場合はnullのまま（プレースホルダー表示）
 };
 
 const handlePlay = async () => {

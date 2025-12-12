@@ -12,6 +12,7 @@
             <th>名前</th>
             <th>公開</th>
             <th>クイズ回答</th>
+            <th>クイズ問題文</th>
             <th>メモ</th>
             <th>音声</th>
             <th>画像</th>
@@ -43,6 +44,19 @@
               />
               <span v-else @click="startQuizEdit(se)" class="quiz-value">
                 {{ se.quizAnswer || '未設定' }}
+              </span>
+            </td>
+            <td>
+              <input
+                v-if="editingQuizQuestion === se.id"
+                v-model="quizQuestionEdit"
+                @keyup.enter="saveQuizQuestion(se)"
+                @blur="cancelQuizQuestionEdit"
+                class="quiz-input"
+                autofocus
+              />
+              <span v-else @click="startQuizQuestionEdit(se)" class="quiz-value">
+                {{ se.quizQuestion || 'この曲はなんでしょう？' }}
               </span>
             </td>
             <td>
@@ -117,6 +131,8 @@ const { getSEImageURL, getSEAudioURL } = useSE();
 const seList = ref([]);
 const editingQuiz = ref(null);
 const quizAnswerEdit = ref('');
+const editingQuizQuestion = ref(null);
+const quizQuestionEdit = ref('');
 const editingMemo = ref(null);
 const memoEdit = ref('');
 const saving = ref(false);
@@ -155,7 +171,8 @@ const togglePublished = async (se) => {
   const result = await updateSE(se.id, { published: newValue });
   
   if (result.success) {
-    se.published = newValue;
+    // データを再読み込みして確実に反映
+    await loadData();
   } else {
     alert('更新に失敗しました');
   }
@@ -175,10 +192,33 @@ const saveQuizAnswer = async (se) => {
   const result = await updateSE(se.id, { quizAnswer: quizAnswerEdit.value });
   
   if (result.success) {
-    se.quizAnswer = quizAnswerEdit.value;
     cancelQuizEdit();
-    // 成功を通知（アラートなし、コンソールログのみ）
+    // データを再読み込みして確実に反映
+    await loadData();
     console.log('クイズ回答を更新しました:', se.seId, quizAnswerEdit.value);
+  } else {
+    alert('更新に失敗しました');
+  }
+};
+
+const startQuizQuestionEdit = (se) => {
+  editingQuizQuestion.value = se.id;
+  quizQuestionEdit.value = se.quizQuestion || 'この曲はなんでしょう？';
+};
+
+const cancelQuizQuestionEdit = () => {
+  editingQuizQuestion.value = null;
+  quizQuestionEdit.value = '';
+};
+
+const saveQuizQuestion = async (se) => {
+  const result = await updateSE(se.id, { quizQuestion: quizQuestionEdit.value });
+  
+  if (result.success) {
+    cancelQuizQuestionEdit();
+    // データを再読み込みして確実に反映
+    await loadData();
+    console.log('クイズ問題文を更新しました:', se.seId, quizQuestionEdit.value);
   } else {
     alert('更新に失敗しました');
   }
@@ -198,9 +238,9 @@ const saveMemo = async (se) => {
   const result = await updateSE(se.id, { memo: memoEdit.value });
   
   if (result.success) {
-    se.memo = memoEdit.value;
     cancelMemoEdit();
-    // 成功を通知（アラートなし、コンソールログのみ）
+    // データを再読み込みして確実に反映
+    await loadData();
     console.log('メモを更新しました:', se.seId, memoEdit.value);
   } else {
     alert('更新に失敗しました');
