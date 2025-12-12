@@ -34,6 +34,7 @@
           :se="se"
           :acquired="isSEAcquired(se.seId)"
           :coming-soon="se.comingSoon || false"
+          :is-quiz-answered="answeredQuizzes.includes(se.seId)"
           @play="handlePlay"
           @download="handleDownload"
           @quiz-answered="handleQuizAnswered"
@@ -55,7 +56,7 @@ import { db } from '../firebase';
 const router = useRouter();
 const route = useRoute();
 const { nickname, userId, logout } = useAuth();
-const { seMaster, userSEs, loading, fetchSEMaster, fetchUserSEs, isSEAcquired, playSound, downloadSound } = useSE();
+const { seMaster, userSEs, loading, fetchSEMaster, fetchUserSEs, isSEAcquired, playSound, downloadSound, checkAndUnlockForcedSEs } = useSE();
 
 const seMasterList = computed(() => {
   // seIdで昇順ソート（数値として比較）
@@ -84,6 +85,7 @@ const completionRate = computed(() =>
 );
 
 const quizCorrectCount = ref(0);
+const answeredQuizzes = ref([]);
 
 // クイズ正解数を取得
 const fetchQuizScore = async () => {
@@ -97,6 +99,7 @@ const fetchQuizScore = async () => {
     if (!querySnapshot.empty) {
       const userData = querySnapshot.docs[0].data();
       quizCorrectCount.value = userData.correctAnswers || 0;
+      answeredQuizzes.value = userData.answeredQuizzes || [];
     }
   } catch (error) {
     console.error('クイズ正解数取得エラー:', error);
@@ -145,6 +148,12 @@ const loadData = async () => {
   console.log('SEマスター取得完了:', seMaster.value.length, '件');
   
   if (userId.value) {
+    // 全員配布SEを自動取得
+    const forceResult = await checkAndUnlockForcedSEs();
+    if (forceResult.success && forceResult.count > 0) {
+      console.log(`${forceResult.count}件のSEを自動取得しました`);
+    }
+    
     await fetchUserSEs(userId.value);
     console.log('ユーザーSE取得完了:', userSEs.value.length, '件');
     

@@ -41,8 +41,9 @@
       </button>
 
       <!-- クイズボタン -->
-      <button @click="handleQuiz" class="btn-quiz" :disabled="!acquired || comingSoon">
-        クイズ
+      <button @click="handleQuiz" class="btn-quiz" :class="{ answered: isQuizAnswered }" :disabled="!acquired || comingSoon">
+        <span v-if="isQuizAnswered">✓ 正解済み</span>
+        <span v-else>クイズ</span>
       </button>
     </div>
 
@@ -103,6 +104,10 @@ const props = defineProps({
     default: false
   },
   comingSoon: {
+    type: Boolean,
+    default: false
+  },
+  isQuizAnswered: {
     type: Boolean,
     default: false
   }
@@ -196,12 +201,13 @@ const submitQuiz = async () => {
   console.log('[submitQuiz] userId:', userId.value);
   console.log('[submitQuiz] seId:', props.se.seId);
   console.log('[submitQuiz] answer:', quizAnswer.value);
+  console.log('[submitQuiz] 正解:', props.se.quizAnswer);
   
   isQuizSubmitting.value = true;
   
   try {
-    // 正解判定（全て「せいかい」が正解）
-    const isCorrect = quizAnswer.value === 'せいかい';
+    // Firestoreから取得したquizAnswerと比較
+    const isCorrect = quizAnswer.value === props.se.quizAnswer;
     console.log('[submitQuiz] isCorrect:', isCorrect);
     
     // 正解をFirestoreに保存
@@ -456,6 +462,18 @@ onMounted(() => {
   opacity: 0.4;
   cursor: not-allowed;
   color: var(--text-secondary);
+}
+
+/* 正解済みクイズボタン */
+.btn-quiz.answered {
+  background: var(--accent-color);
+  color: var(--bg-primary);
+  border-color: var(--accent-color);
+}
+
+.btn-quiz.answered:hover:not(:disabled) {
+  background: var(--accent-color);
+  opacity: 0.9;
 }
 
 /* 未取得表示（削除） */

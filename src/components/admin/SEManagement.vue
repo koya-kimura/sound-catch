@@ -11,6 +11,7 @@
             <th>ID</th>
             <th>名前</th>
             <th>公開</th>
+            <th>全員配布</th>
             <th>クイズ回答</th>
             <th>クイズ問題文</th>
             <th>メモ</th>
@@ -29,6 +30,16 @@
                   type="checkbox"
                   :checked="se.published"
                   @change="togglePublished(se)"
+                />
+                <span class="slider"></span>
+              </label>
+            </td>
+            <td>
+              <label class="toggle-switch">
+                <input
+                  type="checkbox"
+                  :checked="se.forceUnlock"
+                  @change="toggleForceUnlock(se)"
                 />
                 <span class="slider"></span>
               </label>
@@ -173,6 +184,21 @@ const togglePublished = async (se) => {
   if (result.success) {
     // データを再読み込みして確実に反映
     await loadData();
+  } else {
+    alert('更新に失敗しました');
+  }
+};
+
+const toggleForceUnlock = async (se) => {
+  const newValue = !se.forceUnlock;
+  const result = await updateSE(se.id, { forceUnlock: newValue });
+  
+  if (result.success) {
+    // データを再読み込みして確実に反映
+    await loadData();
+    if (newValue) {
+      alert(`SE「${se.name}」を全ユーザーに配布します`);
+    }
   } else {
     alert('更新に失敗しました');
   }

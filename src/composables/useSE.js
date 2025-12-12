@@ -269,6 +269,52 @@ export function useSE() {
         }
     };
 
+    // 全員配布が有効なSEを自動的に取得
+    const checkAndUnlockForcedSEs = async () => {
+        if (!userId.value) return { success: false, error: 'ユーザーIDがありません' };
+
+        try {
+            // forceUnlock=trueのSEを取得
+            const q = query(
+                collection(db, 'se_master'),
+                where('forceUnlock', '==', true)
+            );
+
+            const seSnapshot = await getDocs(q);
+            const forcedSEs = seSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+            if (forcedSEs.length === 0) {
+                return { success: true, count: 0 };
+            }
+
+            // 既に取得済みのSEを確認
+            const userSEsQuery = query(
+                collection(db, 'user_ses'),
+                where('userId', '==', userId.value)
+            );
+            const userSEsSnapshot = await getDocs(userSEsQuery);
+            const acquiredSEIds = userSEsSnapshot.docs.map(doc => doc.data().seId);
+
+            // 未取得のforceUnlock SEを追加
+            let addedCount = 0;
+            for (const se of forcedSEs) {
+                if (!acquiredSEIds.includes(se.seId)) {
+                    await addDoc(collection(db, 'user_ses'), {
+                        userId: userId.value,
+                        seId: se.seId,
+                        acquiredAt: serverTimestamp()
+                    });
+                    addedCount++;
+                }
+            }
+
+            return { success: true, count: addedCount };
+        } catch (error) {
+            console.error('強制配布SE取得エラー:', error);
+            return { success: false, error };
+        }
+    };
+
     return {
         seMaster,
         userSEs,
@@ -281,6 +327,7 @@ export function useSE() {
         getSEImageURL,
         playSound,
         downloadSound,
-        saveQuizAnswer
+        saveQuizAnswer,
+        checkAndUnlockForcedSEs
     };
 }
