@@ -7,10 +7,10 @@ service cloud.firestore {
       allow read, write: if true;
     }
     
-    // SEマスターコレクション: 誰でも読み取り可能
+    // SEマスターコレクション: 誰でも読み取り可能、書き込みも許可（開発環境）
     match /se_master/{seId} {
       allow read: if true;
-      allow write: if false; // 管理者のみ（手動で追加）
+      allow write: if true; // 管理画面から更新可能
     }
     
     // ユーザーSEコレクション: 誰でも読み取り可能

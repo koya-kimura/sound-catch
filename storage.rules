@@ -1,16 +1,16 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    // SE音声ファイル: 誰でも読み取り可能
+    // SE音声ファイル: 誰でも読み取り・書き込み可能（開発環境）
     match /se_files/{fileName} {
       allow read: if true;
-      allow write: if false; // 管理者のみ（手動でアップロード）
+      allow write: if true; // 管理画面からアップロード可能
     }
     
-    // SE画像ファイル: 誰でも読み取り可能
+    // SE画像ファイル: 誰でも読み取り・書き込み可能（開発環境）
     match /se_images/{fileName} {
       allow read: if true;
-      allow write: if false; // 管理者のみ（手動でアップロード）
+      allow write: if true; // 管理画面からアップロード可能
     }
   }
 }

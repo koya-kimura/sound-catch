@@ -32,6 +32,11 @@ const router = createRouter({
             name: 'nfc',
             // beforeEachガードで処理するため、ここではコンポーネントを指定しない
             component: () => import('../views/AcquireView.vue')
+        },
+        {
+            path: '/admin',
+            name: 'admin',
+            component: () => import('../views/AdminView.vue')
         }
     ]
 });
