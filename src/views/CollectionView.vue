@@ -1,7 +1,7 @@
 <template>
   <div class="collection-view">
     <header class="header">
-      <h1>NFC Sound Collector</h1>
+      <h1>Sound Catch</h1>
       <div class="user-info">
         <span class="nickname">{{ nickname }}</span>
         <button @click="handleLogout" class="btn-logout">ログアウト</button>

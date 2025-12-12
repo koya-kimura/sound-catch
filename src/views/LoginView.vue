@@ -2,7 +2,7 @@
   <div class="login-view">
     <div class="login-container">
       <header class="header">
-        <h1>NFC Sound Collector</h1>
+        <h1>Sound Catch</h1>
         <p class="subtitle">ニックネームを入力してスタート</p>
       </header>
 

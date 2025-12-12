@@ -1,6 +1,6 @@
 {
     "name": "functions",
-    "description": "Cloud Functions for NFC Sound Collector",
+    "description": "Cloud Functions for Sound Catch",
     "scripts": {
         "serve": "firebase emulators:start --only functions",
         "shell": "firebase functions:shell",

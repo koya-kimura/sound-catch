@@ -15,7 +15,7 @@
 
 1. [Firebase Console](https://console.firebase.google.com/)にアクセス
 2. 「プロジェクトを追加」をクリック
-3. プロジェクト名を入力（例: `nfc-sound-collector`）
+3. プロジェクト名を入力（例: `sound-catch`）
 4. Google アナリティクスは任意
 5. プロジェクトを作成
 

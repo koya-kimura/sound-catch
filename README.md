@@ -1,4 +1,4 @@
-# NFC Sound Collector
+# Sound Catch
 
 イベント参加者がNFCタグをスキャンしてSE（効果音）を収集できるWebアプリケーション
 
@@ -11,7 +11,7 @@
 ## プロジェクト構成
 
 ```
-nfc-sound-collector/
+sound-catch/
 ├── src/
 │   ├── components/       # Vueコンポーネント
 │   ├── views/           # ページビュー

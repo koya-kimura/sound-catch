@@ -1,5 +1,5 @@
 {
-    "name": "NFC Sound Collector",
+    "name": "Sound Catch",
     "short_name": "SE Collector",
     "description": "イベントでNFCタグをスキャンしてSEを集めよう",
     "start_url": "/",
