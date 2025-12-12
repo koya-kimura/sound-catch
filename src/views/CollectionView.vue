@@ -45,7 +45,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuth } from '../composables/useAuth';
 import { useSE } from '../composables/useSE';
@@ -56,7 +56,7 @@ import { db } from '../firebase';
 const router = useRouter();
 const route = useRoute();
 const { nickname, userId, logout } = useAuth();
-const { seMaster, userSEs, loading, fetchSEMaster, fetchUserSEs, isSEAcquired, playSound, downloadSound, checkAndUnlockForcedSEs } = useSE();
+const { seMaster, userSEs, loading, fetchSEMaster, fetchUserSEs, isSEAcquired, playSound, downloadSound, cleanup } = useSE();
 
 const seMasterList = computed(() => {
   // seIdで昇順ソート（数値として比較）
@@ -140,34 +140,20 @@ const handleLogout = () => {
 };
 
 const loadData = async () => {
-  console.log('=== CollectionView loadData 開始 ===');
-  console.log('現在のユーザーID:', userId.value);
-  console.log('現在のニックネーム:', nickname.value);
-  
-  await fetchSEMaster();
-  console.log('SEマスター取得完了:', seMaster.value.length, '件');
+  fetchSEMaster(); // リアルタイム監視開始
   
   if (userId.value) {
-    // 全員配布SEを自動取得
-    const forceResult = await checkAndUnlockForcedSEs();
-    if (forceResult.success && forceResult.count > 0) {
-      console.log(`${forceResult.count}件のSEを自動取得しました`);
-    }
-    
     await fetchUserSEs(userId.value);
-    console.log('ユーザーSE取得完了:', userSEs.value.length, '件');
-    
     await fetchQuizScore();
-    console.log('クイズ正解数:', quizCorrectCount.value);
-  } else {
-    console.warn('⚠️ userIdが存在しません！');
   }
-  
-  console.log('=== CollectionView loadData 終了 ===');
 };
 
 onMounted(async () => {
   await loadData();
+});
+
+onUnmounted(() => {
+  cleanup(); // リスナーを解除
 });
 
 // ルートが変更され、このコンポーネントに戻ってきたときにデータを再読み込み

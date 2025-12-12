@@ -22,30 +22,17 @@ export function useAuth() {
         const storedUserId = localStorage.getItem(USER_ID_KEY);
         const storedNickname = localStorage.getItem(NICKNAME_KEY);
 
-        console.log('=== セッション初期化 ===');
-        console.log('LocalStorageから取得:', {
-            sessionId: storedSessionId,
-            userId: storedUserId,
-            nickname: storedNickname
-        });
-
         if (storedSessionId && storedUserId && storedNickname) {
             sessionId.value = storedSessionId;
             userId.value = storedUserId;
             nickname.value = storedNickname;
             isAuthenticated.value = true;
-
-            console.log('✅ セッション復元成功');
-        } else {
-            console.log('❌ セッション情報が不完全');
         }
     };
 
     // ログイン処理
     const login = async (userNickname) => {
         try {
-            console.log('=== ログイン処理開始 ===');
-            console.log('ニックネーム:', userNickname);
 
             // 1. 既存のニックネームを検索
             const q = query(
@@ -72,7 +59,6 @@ export function useAuth() {
                 nickname.value = userNickname;
                 isAuthenticated.value = true;
 
-                console.log('✅ 既存ユーザーでログイン:', existingUserId);
                 return { success: true, isNewUser: false };
             }
 
@@ -97,10 +83,9 @@ export function useAuth() {
             nickname.value = userNickname;
             isAuthenticated.value = true;
 
-            console.log('✅ 新規ユーザーを登録:', userRef.id);
             return { success: true, isNewUser: true };
         } catch (error) {
-            console.error('❌ ログインエラー:', error);
+            console.error('ログインエラー:', error);
             return { success: false, error };
         }
     };
@@ -115,8 +100,6 @@ export function useAuth() {
         userId.value = null;
         nickname.value = null;
         isAuthenticated.value = false;
-
-        console.log('✅ ログアウト完了');
     };
 
     // セッションIDでユーザーを検証

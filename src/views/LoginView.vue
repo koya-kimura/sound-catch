@@ -1,33 +1,41 @@
 <template>
   <div class="login-view">
     <div class="login-container">
-      <header class="header">
-        <h1>Sound Catch</h1>
-        <p class="subtitle">ニックネームを入力してスタート</p>
-      </header>
-
-      <div class="login-form">
-        <div class="form-group">
-          <label for="nickname">ニックネーム</label>
-          <input
-            id="nickname"
-            v-model="nicknameInput"
-            type="text"
-            placeholder="ニックネームを入力"
-            @keyup.enter="handleLogin"
-            :disabled="isLoading"
-          />
-        </div>
-
-        <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
-
-        <button
-          @click="handleLogin"
-          class="btn-login"
-          :disabled="isLoading"
-        >
-          {{ isLoading ? '処理中...' : 'スタート' }}
+      <h1>Sound Catch</h1>
+      <p class="subtitle">ニックネームを入力してください</p>
+      
+      <form @submit.prevent="handleSubmit" class="login-form">
+        <input
+          v-model="nickname"
+          type="text"
+          placeholder="ニックネーム"
+          class="nickname-input"
+          maxlength="20"
+          required
+        />
+        <button type="submit" class="login-button" :disabled="loading">
+          {{ loading ? '処理中...' : '次へ' }}
         </button>
+      </form>
+      
+      <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
+    </div>
+
+    <!-- 新規登録確認モーダル -->
+    <div v-if="showConfirmModal" class="modal-overlay" @click="cancelRegistration">
+      <div class="modal" @click.stop>
+        <h2>新規登録</h2>
+        <p class="modal-text">
+          ニックネーム「<strong>{{ nickname }}</strong>」で登録しますか？
+        </p>
+        <div class="modal-buttons">
+          <button @click="confirmRegistration" class="btn-confirm">
+            登録する
+          </button>
+          <button @click="cancelRegistration" class="btn-cancel">
+            キャンセル
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -37,38 +45,76 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuth } from '../composables/useAuth';
+import { db } from '../firebase';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 
 const router = useRouter();
-const { login } = useAuth();
+const { login, initSession } = useAuth();
 
-const nicknameInput = ref('');
+const nickname = ref('');
+const loading = ref(false);
 const errorMessage = ref('');
-const isLoading = ref(false);
+const showConfirmModal = ref(false);
+const isNewUser = ref(false);
 
-const handleLogin = async () => {
-  if (!nicknameInput.value.trim()) {
+// セッションを初期化（既にログイン済みの場合は自動ログイン）
+initSession();
+
+const handleSubmit = async () => {
+  if (!nickname.value.trim()) {
     errorMessage.value = 'ニックネームを入力してください';
     return;
   }
 
-  isLoading.value = true;
+  loading.value = true;
   errorMessage.value = '';
 
-  const result = await login(nicknameInput.value.trim());
+  try {
+    // 既存のニックネームを検索
+    const q = query(
+      collection(db, 'users'),
+      where('nickname', '==', nickname.value.trim())
+    );
+    const querySnapshot = await getDocs(q);
 
-  if (result.success) {
-    // コンソールにログイン情報を表示
-    if (result.isNewUser) {
-      console.log('✅ 新規ユーザー登録が完了しました！');
+    if (querySnapshot.empty) {
+      // 新規ユーザー：確認モーダルを表示
+      isNewUser.value = true;
+      showConfirmModal.value = true;
+      loading.value = false;
     } else {
-      console.log('✅ おかえりなさい！既存ユーザーとしてログインしました。');
+      // 既存ユーザー：そのままログイン
+      await performLogin();
     }
+  } catch (error) {
+    console.error('ユーザーチェックエラー:', error);
+    errorMessage.value = 'エラーが発生しました';
+    loading.value = false;
+  }
+};
+
+const performLogin = async () => {
+  const result = await login(nickname.value.trim());
+  
+  if (result.success) {
     router.push('/collection');
   } else {
-    errorMessage.value = 'ログインに失敗しました。もう一度お試しください。';
+    errorMessage.value = 'ログインに失敗しました';
   }
+  
+  loading.value = false;
+};
 
-  isLoading.value = false;
+const confirmRegistration = async () => {
+  showConfirmModal.value = false;
+  loading.value = true;
+  await performLogin();
+};
+
+const cancelRegistration = () => {
+  showConfirmModal.value = false;
+  isNewUser.value = false;
+  loading.value = false;
 };
 </script>
 
@@ -156,12 +202,88 @@ input[type="text"]::placeholder {
 
 /* エラーメッセージ */
 .error-message {
-  color: #dc3545;
-  font-size: 0.85rem;
-  margin-bottom: 1rem;
-  font-weight: 500;
+  color: #dc2626;
+  font-size: 0.9rem;
+  margin-top: 1rem;
+  text-align: center;
 }
 
+/* 確認モーダル */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: var(--bg-primary);
+  border: 2px solid var(--border-color);
+  padding: 2rem;
+  max-width: 400px;
+  width: 90%;
+}
+
+.modal h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 1rem 0;
+  color: var(--text-primary);
+}
+
+.modal-text {
+  font-size: 1rem;
+  color: var(--text-primary);
+  margin: 0 0 2rem 0;
+  line-height: 1.6;
+}
+
+.modal-text strong {
+  color: var(--accent-color);
+  font-weight: 700;
+}
+
+.modal-buttons {
+  display: flex;
+  gap: 1rem;
+}
+
+.btn-confirm,
+.btn-cancel {
+  flex: 1;
+  padding: 0.85rem 1.25rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  font-family: 'Zen Kaku Gothic New', sans-serif;
+  border: 2px solid var(--border-color);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-confirm {
+  background: var(--border-color);
+  color: var(--bg-primary);
+}
+
+.btn-confirm:hover {
+  background: var(--accent-color);
+  border-color: var(--accent-color);
+}
+
+.btn-cancel {
+  background: var(--bg-primary);
+  color: var(--border-color);
+}
+
+.btn-cancel:hover {
+  background: var(--bg-tertiary);
+}
 /* ログインボタン */
 .btn-login {
   width: 100%;

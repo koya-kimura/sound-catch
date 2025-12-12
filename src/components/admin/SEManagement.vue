@@ -194,11 +194,7 @@ const toggleForceUnlock = async (se) => {
   const result = await updateSE(se.id, { forceUnlock: newValue });
   
   if (result.success) {
-    // データを再読み込みして確実に反映
     await loadData();
-    if (newValue) {
-      alert(`SE「${se.name}」を全ユーザーに配布します`);
-    }
   } else {
     alert('更新に失敗しました');
   }

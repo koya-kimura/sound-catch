@@ -1,30 +1,43 @@
 import { ref } from 'vue';
 import { db, storage } from '../firebase';
-import { collection, getDocs, query, where, addDoc, updateDoc, doc, limit } from 'firebase/firestore';
+import { collection, getDocs, query, where, addDoc, updateDoc, doc, limit, serverTimestamp, onSnapshot } from 'firebase/firestore';
 import { ref as storageRef, getDownloadURL } from 'firebase/storage';
+import { useAuth } from './useAuth';
 
 // SE管理用の composable
 export function useSE() {
     const seMaster = ref([]);
     const userSEs = ref([]);
     const loading = ref(false);
+    const loadingMaster = ref(false);
+    const loadingUserSEs = ref(false);
 
-    // SEマスターデータの取得
-    const fetchSEMaster = async () => {
-        loading.value = true;
-        try {
-            const querySnapshot = await getDocs(collection(db, 'se_master'));
-            seMaster.value = querySnapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
-            return { success: true, data: seMaster.value };
-        } catch (error) {
-            console.error('SEマスター取得エラー:', error);
-            return { success: false, error };
-        } finally {
-            loading.value = false;
+    // SE情報を取得（リアルタイム監視）
+    let unsubscribeSEMaster = null;
+
+    const fetchSEMaster = () => {
+        loadingMaster.value = true;
+
+        // 既存のリスナーがあれば解除
+        if (unsubscribeSEMaster) {
+            unsubscribeSEMaster();
         }
+
+        // リアルタイム監視を開始
+        unsubscribeSEMaster = onSnapshot(
+            collection(db, 'se_master'),
+            (querySnapshot) => {
+                seMaster.value = querySnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                loadingMaster.value = false;
+            },
+            (error) => {
+                console.error('SEマスター取得エラー:', error);
+                loadingMaster.value = false;
+            }
+        );
     };
 
     // SEマスターデータからIDで特定のSEを取得
@@ -59,28 +72,16 @@ export function useSE() {
     const fetchUserSEs = async (userId) => {
         loading.value = true;
         try {
-            console.log('=== fetchUserSEs 開始 ===');
-            console.log('検索するユーザーID:', userId);
-
             const q = query(
                 collection(db, 'user_ses'),
                 where('userId', '==', userId)
             );
             const querySnapshot = await getDocs(q);
 
-            console.log('取得したドキュメント数:', querySnapshot.size);
-
-            userSEs.value = querySnapshot.docs.map(doc => {
-                const data = {
-                    id: doc.id,
-                    ...doc.data()
-                };
-                console.log('取得したSE:', data);
-                return data;
-            });
-
-            console.log('userSEs.value:', userSEs.value);
-            console.log('=== fetchUserSEs 終了 ===');
+            userSEs.value = querySnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
 
             return { success: true, data: userSEs.value };
         } catch (error) {
@@ -91,9 +92,15 @@ export function useSE() {
         }
     };
 
-    // SEが取得済みかチェック
+    // SEが取得済みかチェック（forceUnlock=trueの場合も取得済みとして扱う）
     const isSEAcquired = (seId) => {
-        return userSEs.value.some(se => se.seId === seId);
+        // 実際に取得済みかチェック
+        const actuallyAcquired = userSEs.value.some(se => se.seId === seId);
+        if (actuallyAcquired) return true;
+
+        // forceUnlock=trueの場合も取得済みとして扱う
+        const forcedSE = seMaster.value.find(se => se.seId === seId && se.forceUnlock === true);
+        return !!forcedSE;
     };
 
     // SE音声ファイルのURLを取得（mp3とm4aの両方に対応）
@@ -121,32 +128,61 @@ export function useSE() {
     // SE音声の再生
     const playSound = async (seId, onProgress, onEnded) => {
         try {
-            const result = await getSEAudioURL(seId);
-            if (result.success) {
-                const audio = new Audio(result.url);
+            const extensions = ['mp3', 'm4a'];
+            let audioUrl = null;
 
-                // 進捗更新
-                audio.addEventListener('timeupdate', () => {
+            for (const ext of extensions) {
+                try {
+                    const audioRef = storageRef(storage, `se_audio/${seId}.${ext}`);
+                    audioUrl = await getDownloadURL(audioRef);
+                    break;
+                } catch (error) {
+                    continue;
+                }
+            }
+
+            if (!audioUrl) {
+                return { success: false, error: '音声ファイルが見つかりません' };
+            }
+
+            const audio = new Audio(audioUrl);
+
+            // requestAnimationFrameを使用してスムーズな更新
+            let animationFrameId = null;
+            const updateProgress = () => {
+                if (audio.currentTime > 0 && !audio.paused) {
+                    const progress = (audio.currentTime / audio.duration) * 100;
                     if (onProgress) {
                         onProgress({
+                            progress,
                             currentTime: audio.currentTime,
-                            duration: audio.duration,
-                            progress: (audio.currentTime / audio.duration) * 100
+                            duration: audio.duration
                         });
                     }
-                });
+                    animationFrameId = requestAnimationFrame(updateProgress);
+                }
+            };
 
-                // 再生終了時
-                audio.addEventListener('ended', () => {
-                    if (onEnded) {
-                        onEnded();
-                    }
-                });
+            audio.addEventListener('play', () => {
+                updateProgress();
+            });
 
-                await audio.play();
-                return { success: true, audio };
-            }
-            return { success: false, error: 'URL取得失敗' };
+            audio.addEventListener('ended', () => {
+                if (animationFrameId) {
+                    cancelAnimationFrame(animationFrameId);
+                }
+                if (onEnded) onEnded();
+            });
+
+            audio.addEventListener('pause', () => {
+                if (animationFrameId) {
+                    cancelAnimationFrame(animationFrameId);
+                }
+            });
+
+            await audio.play();
+
+            return { success: true, audio };
         } catch (error) {
             console.error('音声再生エラー:', error);
             return { success: false, error };
@@ -183,39 +219,30 @@ export function useSE() {
         }
     };
 
-    // SE画像ファイルのURLを取得（jpg, png, webpに対応）
+    // SE画像ファイルのURLを取得（jpg, pngに対応）
     const getSEImageURL = async (seId) => {
-        console.log(`[getSEImageURL] seId: ${seId} の画像を取得中...`);
-
-        // 優先順位: jpg → png → webp
-        const extensions = ['jpg', 'png', 'webp'];
+        const extensions = ['jpg', 'png'];
 
         for (const ext of extensions) {
             try {
                 const fileName = `${seId}.${ext}`;
                 const fileRef = storageRef(storage, `se_images/${fileName}`);
                 const url = await getDownloadURL(fileRef);
-                console.log(`[getSEImageURL] 成功: se_images/${fileName}`);
                 return { success: true, url, extension: ext };
             } catch (error) {
-                // このファイルが存在しない場合、次の拡張子を試す
-                console.log(`[getSEImageURL] 見つからない: se_images/${seId}.${ext}`);
+                // 404エラーはコンソールに出力しない（正常な動作）
                 continue;
             }
         }
 
-        // どの画像も見つからなかった場合、デフォルト画像を試す
-        console.log(`[getSEImageURL] ${seId} の画像が見つからない。sample.pngを試します...`);
+        // どの画像も見つからなかった場合、デフォルト画像を試す（sample.png）
         try {
             const defaultFileRef = storageRef(storage, 'se_images/sample.png');
             const url = await getDownloadURL(defaultFileRef);
-            console.log(`[getSEImageURL] 成功: sample.png を使用`);
             return { success: true, url, extension: 'png', isDefault: true };
         } catch (error) {
-            // デフォルト画像もない場合は、画像なしとして扱う
-            console.error(`[getSEImageURL] sample.pngも取得できませんでした:`, error);
-            console.log(`画像ファイルが見つかりません（sample.pngも含む）: ${seId}`);
-            return { success: false, url: null };
+            // sample.pngもない場合、画像なしとして扱う（エラーではない）
+            return { success: false, error: '画像が見つかりません' };
         }
     };
 
@@ -269,49 +296,10 @@ export function useSE() {
         }
     };
 
-    // 全員配布が有効なSEを自動的に取得
-    const checkAndUnlockForcedSEs = async () => {
-        if (!userId.value) return { success: false, error: 'ユーザーIDがありません' };
-
-        try {
-            // forceUnlock=trueのSEを取得
-            const q = query(
-                collection(db, 'se_master'),
-                where('forceUnlock', '==', true)
-            );
-
-            const seSnapshot = await getDocs(q);
-            const forcedSEs = seSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-            if (forcedSEs.length === 0) {
-                return { success: true, count: 0 };
-            }
-
-            // 既に取得済みのSEを確認
-            const userSEsQuery = query(
-                collection(db, 'user_ses'),
-                where('userId', '==', userId.value)
-            );
-            const userSEsSnapshot = await getDocs(userSEsQuery);
-            const acquiredSEIds = userSEsSnapshot.docs.map(doc => doc.data().seId);
-
-            // 未取得のforceUnlock SEを追加
-            let addedCount = 0;
-            for (const se of forcedSEs) {
-                if (!acquiredSEIds.includes(se.seId)) {
-                    await addDoc(collection(db, 'user_ses'), {
-                        userId: userId.value,
-                        seId: se.seId,
-                        acquiredAt: serverTimestamp()
-                    });
-                    addedCount++;
-                }
-            }
-
-            return { success: true, count: addedCount };
-        } catch (error) {
-            console.error('強制配布SE取得エラー:', error);
-            return { success: false, error };
+    // クリーンアップ関数
+    const cleanup = () => {
+        if (unsubscribeSEMaster) {
+            unsubscribeSEMaster();
         }
     };
 
@@ -328,6 +316,6 @@ export function useSE() {
         playSound,
         downloadSound,
         saveQuizAnswer,
-        checkAndUnlockForcedSEs
+        cleanup
     };
 }

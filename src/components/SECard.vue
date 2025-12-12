@@ -197,37 +197,24 @@ const closeQuizModal = () => {
 const submitQuiz = async () => {
   if (isQuizSubmitting.value) return;
   
-  console.log('[submitQuiz] 開始');
-  console.log('[submitQuiz] userId:', userId.value);
-  console.log('[submitQuiz] seId:', props.se.seId);
-  console.log('[submitQuiz] answer:', quizAnswer.value);
-  console.log('[submitQuiz] 正解:', props.se.quizAnswer);
-  
   isQuizSubmitting.value = true;
   
   try {
-    // Firestoreから取得したquizAnswerと比較
     const isCorrect = quizAnswer.value === props.se.quizAnswer;
-    console.log('[submitQuiz] isCorrect:', isCorrect);
-    
-    // 正解をFirestoreに保存
     const result = await saveQuizAnswer(userId.value, props.se.seId, isCorrect);
-    console.log('[submitQuiz] saveQuizAnswer result:', result);
     
     if (result.success) {
       if (isCorrect) {
         quizResult.value = `${result.message} 正解数: ${result.correctCount}`;
-        // 正解時に親コンポーネントに通知
         emit('quiz-answered', { isCorrect: true, correctCount: result.correctCount });
       } else {
         quizResult.value = result.message;
       }
     } else {
       quizResult.value = 'エラーが発生しました';
-      console.error('[submitQuiz] エラー:', result.error);
     }
   } catch (error) {
-    console.error('[submitQuiz] 予期しないエラー:', error);
+    console.error('クイズ送信エラー:', error);
     quizResult.value = 'エラーが発生しました';
   }
   
