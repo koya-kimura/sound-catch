@@ -64,7 +64,16 @@ exports.acquireSE = onRequest(async (req, res) => {
         }
 
         const seDoc = seMasterSnapshot.docs[0];
-        const seId = seDoc.data().seId;
+        const seData = seDoc.data();
+        const seId = seData.seId;
+
+        // 公開状態チェック
+        // publishedがfalseまたは未設定の場合はCOMING SOON
+        if (seData.published !== true) {
+            return res.redirect(
+                `${baseUrl}/acquire?success=false&error=coming_soon&se_id=${seId}`
+            );
+        }
 
         // 3. 重複チェック: 既に取得済みか確認
         const userSESnapshot = await db

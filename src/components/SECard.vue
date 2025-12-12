@@ -1,8 +1,8 @@
 <template>
-  <div class="se-card" :class="{ acquired: acquired }">
+  <div class="se-card" :class="{ acquired: acquired && !comingSoon, 'coming-soon': comingSoon }">
     <div class="se-controls">
       <!-- 画像兼再生ボタン -->
-      <button @click="handlePlay" class="btn-play-image" :disabled="!acquired">
+      <button @click="handlePlay" class="btn-play-image" :disabled="!acquired || comingSoon">
         <img 
           v-if="imageUrl" 
           :src="imageUrl" 
@@ -14,8 +14,13 @@
           <span>{{ se.name }}</span>
         </div>
         
+        <!-- COMING SOONオーバーレイ -->
+        <div v-if="comingSoon" class="coming-soon-overlay">
+          <span class="coming-soon-text">COMING SOON</span>
+        </div>
+        
         <!-- 未取得オーバーレイ -->
-        <div v-if="!acquired" class="locked-overlay">
+        <div v-else-if="!acquired" class="locked-overlay">
           <span class="locked-text">未取得</span>
         </div>
         
@@ -31,12 +36,12 @@
       </button>
       
       <!-- ダウンロードボタン -->
-      <button @click="handleDownload" class="btn-download" :disabled="!acquired">
+      <button @click="handleDownload" class="btn-download" :disabled="!acquired || comingSoon">
         ダウンロード
       </button>
 
       <!-- クイズボタン -->
-      <button @click="handleQuiz" class="btn-quiz" :disabled="!acquired">
+      <button @click="handleQuiz" class="btn-quiz" :disabled="!acquired || comingSoon">
         クイズ
       </button>
     </div>
@@ -94,6 +99,10 @@ const props = defineProps({
     required: true
   },
   acquired: {
+    type: Boolean,
+    default: false
+  },
+  comingSoon: {
     type: Boolean,
     default: false
   }
@@ -330,6 +339,37 @@ onMounted(() => {
   font-weight: 700;
   color: rgba(255, 255, 255, 0.95);
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* COMING SOONオーバーレイ */
+.coming-soon-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.coming-soon-text {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.95);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  letter-spacing: 0.05em;
+}
+
+/* COMING SOON状態のカード */
+.se-card.coming-soon {
+  opacity: 0.6;
+  background: var(--bg-secondary);
+}
+
+.se-card.coming-soon:hover {
+  border-color: var(--border-color);
 }
 
 /* 再生中のオーバーレイ */

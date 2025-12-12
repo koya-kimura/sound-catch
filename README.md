@@ -24,6 +24,12 @@ sound-catch/
 └── public/              # 静的ファイル
 ```
 
+## ドキュメント
+
+- **[コンテンツ管理ガイド](CONTENT_MANAGEMENT.md)** - SE、クイズ、画像、音声ファイルの設定方法
+- **[セットアップガイド](SETUP.md)** - Firebase初期設定の詳細手順
+- **[NFCテストURL](NFC_TEST_URLS.md)** - NFCタグのテスト方法
+
 ## セットアップ
 
 ### 1. 依存関係のインストール

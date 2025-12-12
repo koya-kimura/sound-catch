@@ -1,6 +1,6 @@
 import { ref } from 'vue';
 import { db, storage } from '../firebase';
-import { collection, getDocs, query, where, addDoc, updateDoc, doc } from 'firebase/firestore';
+import { collection, getDocs, query, where, addDoc, updateDoc, doc, limit } from 'firebase/firestore';
 import { ref as storageRef, getDownloadURL } from 'firebase/storage';
 
 // SE管理用の composable
@@ -24,6 +24,34 @@ export function useSE() {
             return { success: false, error };
         } finally {
             loading.value = false;
+        }
+    };
+
+    // SEマスターデータからIDで特定のSEを取得
+    const getSEById = async (seId) => {
+        try {
+            const q = query(
+                collection(db, 'se_master'),
+                where('seId', '==', seId),
+                limit(1)
+            );
+            const querySnapshot = await getDocs(q);
+
+            if (querySnapshot.empty) {
+                return { success: false, error: 'SE not found' };
+            }
+
+            const seDoc = querySnapshot.docs[0];
+            return {
+                success: true,
+                se: {
+                    id: seDoc.id,
+                    ...seDoc.data()
+                }
+            };
+        } catch (error) {
+            console.error('SE取得エラー:', error);
+            return { success: false, error };
         }
     };
 
@@ -247,6 +275,7 @@ export function useSE() {
         loading,
         fetchSEMaster,
         fetchUserSEs,
+        getSEById,
         isSEAcquired,
         getSEAudioURL,
         getSEImageURL,

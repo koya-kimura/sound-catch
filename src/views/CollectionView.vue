@@ -33,6 +33,7 @@
           :key="se.seId"
           :se="se"
           :acquired="isSEAcquired(se.seId)"
+          :coming-soon="se.comingSoon || false"
           @play="handlePlay"
           @download="handleDownload"
           @quiz-answered="handleQuizAnswered"
@@ -56,8 +57,27 @@ const route = useRoute();
 const { nickname, userId, logout } = useAuth();
 const { seMaster, userSEs, loading, fetchSEMaster, fetchUserSEs, isSEAcquired, playSound, downloadSound } = useSE();
 
-const seMasterList = computed(() => seMaster.value);
-const totalCount = computed(() => seMasterList.value.length);
+const seMasterList = computed(() => {
+  // seIdで昇順ソート（数値として比較）
+  return [...seMaster.value].sort((a, b) => {
+    const idA = parseInt(a.seId) || 0;
+    const idB = parseInt(b.seId) || 0;
+    return idA - idB;
+  }).map(se => {
+    // publishedがfalseまたは未設定の場合、COMING SOONとして扱う
+    const isPublished = se.published === true;
+    return {
+      ...se,
+      comingSoon: !isPublished
+    };
+  });
+});
+
+// COMING SOONを除外した総数
+const totalCount = computed(() => 
+  seMasterList.value.filter(se => !se.comingSoon).length
+);
+
 const acquiredCount = computed(() => userSEs.value.length);
 const completionRate = computed(() => 
   totalCount.value > 0 ? Math.round((acquiredCount.value / totalCount.value) * 100) : 0
