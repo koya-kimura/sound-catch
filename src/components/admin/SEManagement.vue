@@ -177,6 +177,8 @@ const saveQuizAnswer = async (se) => {
   if (result.success) {
     se.quizAnswer = quizAnswerEdit.value;
     cancelQuizEdit();
+    // 成功を通知（アラートなし、コンソールログのみ）
+    console.log('クイズ回答を更新しました:', se.seId, quizAnswerEdit.value);
   } else {
     alert('更新に失敗しました');
   }
@@ -198,6 +200,8 @@ const saveMemo = async (se) => {
   if (result.success) {
     se.memo = memoEdit.value;
     cancelMemoEdit();
+    // 成功を通知（アラートなし、コンソールログのみ）
+    console.log('メモを更新しました:', se.seId, memoEdit.value);
   } else {
     alert('更新に失敗しました');
   }
