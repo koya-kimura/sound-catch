@@ -101,7 +101,7 @@ const handleLogout = () => {
 <style scoped>
 .admin-view {
   min-height: 100vh;
-  background: var(--bg-secondary);
+  /* background: var(--bg-secondary); */
 }
 
 /* 認証画面 */

@@ -28,7 +28,7 @@
 /* ベース設定 */
 body {
   font-family: "Zen Kaku Gothic New", sans-serif;
-  background: var(--bg-secondary);
+  /* background: var(--bg-secondary); */
   color: var(--text-primary);
   min-height: 100vh;
   line-height: 1.6;

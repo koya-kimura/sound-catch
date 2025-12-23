@@ -127,7 +127,7 @@ const goToCollection = () => {
 <style scoped>
 .acquire-view {
   min-height: 100vh;
-  background: var(--bg-secondary);
+  /* background: var(--bg-secondary); */
   display: flex;
   align-items: center;
   justify-content: center;

@@ -185,7 +185,7 @@ watch(
 <style scoped>
 .collection-view {
   min-height: 100vh;
-  background: var(--bg-secondary);
+  /* background: var(--bg-secondary); */
 }
 
 /* ヘッダー */

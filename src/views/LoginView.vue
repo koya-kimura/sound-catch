@@ -134,7 +134,7 @@ const cancelRegistration = () => {
 .login-view {
   min-height: 100vh;
   min-height: 100dvh;
-  background: var(--bg-secondary);
+  /* background: var(--bg-secondary); */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -145,6 +145,12 @@ const cancelRegistration = () => {
   width: 100%;
   max-width: 500px;
   transform: translateY(-5vh);
+  background: var(--bg-primary);
+  border: 2px solid var(--border-color);
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 /* ヘッダー */
@@ -164,19 +170,19 @@ const cancelRegistration = () => {
 }
 
 .service-title {
-  font-size: 2rem;
+  font-size: 3rem;
   padding-bottom: 2rem;
+  text-align: center;
+  margin: 0;
 }
 
 /* フォーム */
 .login-form {
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 1rem;
-  background: var(--bg-primary);
-  border: 2px solid var(--border-color);
-  padding: 2rem;
 }
 
 .form-group {
@@ -338,6 +344,11 @@ input[type="text"]::placeholder {
 
   .login-form {
     padding: 1.5rem;
+  }
+
+  .service-title {
+    font-size: 2rem;
+    padding-bottom: 0rem;
   }
 }
 </style>
