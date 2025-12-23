@@ -91,7 +91,13 @@ const totalCount = computed(
   () => seMasterList.value.filter((se) => !se.comingSoon).length
 );
 
-const acquiredCount = computed(() => userSEs.value.length);
+// 取得済み数（forceUnlockを含む）
+const acquiredCount = computed(() => {
+  return seMasterList.value.filter(
+    (se) => !se.comingSoon && isSEAcquired(se.seId)
+  ).length;
+});
+
 const completionRate = computed(() =>
   totalCount.value > 0
     ? Math.round((acquiredCount.value / totalCount.value) * 100)
