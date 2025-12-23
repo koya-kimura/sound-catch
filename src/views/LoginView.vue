@@ -1,32 +1,36 @@
 <template>
   <div class="login-view">
     <div class="login-container">
-      <h1>Sound Catch</h1>
-      <p class="subtitle">ニックネームを入力してください</p>
-      
+      <h1 class="service-title">アカペラドン！</h1>
+
       <form @submit.prevent="handleSubmit" class="login-form">
         <input
           v-model="nickname"
           type="text"
-          placeholder="ニックネーム"
+          placeholder="ニックネームを入力してね！"
           class="nickname-input"
           maxlength="20"
           required
         />
         <button type="submit" class="login-button" :disabled="loading">
-          {{ loading ? '処理中...' : '次へ' }}
+          {{ loading ? "処理中..." : "次へ" }}
         </button>
       </form>
-      
+
       <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
     </div>
 
     <!-- 新規登録確認モーダル -->
-    <div v-if="showConfirmModal" class="modal-overlay" @click="cancelRegistration">
+    <div
+      v-if="showConfirmModal"
+      class="modal-overlay"
+      @click="cancelRegistration"
+    >
       <div class="modal" @click.stop>
         <h2>新規登録</h2>
         <p class="modal-text">
-          ニックネーム「<strong>{{ nickname }}</strong>」で登録しますか？
+          ニックネーム「<strong>{{ nickname }}</strong
+          >」で登録しますか？
         </p>
         <div class="modal-buttons">
           <button @click="confirmRegistration" class="btn-confirm">
@@ -42,38 +46,46 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
-import { useAuth } from '../composables/useAuth';
-import { db } from '../firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { ref, onMounted, onUnmounted } from "vue";
+import { useRouter } from "vue-router";
+import { useAuth } from "../composables/useAuth";
+import { db } from "../firebase";
+import { collection, query, where, getDocs } from "firebase/firestore";
 
 const router = useRouter();
 const { login, initSession } = useAuth();
 
-const nickname = ref('');
+const nickname = ref("");
 const loading = ref(false);
-const errorMessage = ref('');
+const errorMessage = ref("");
 const showConfirmModal = ref(false);
 const isNewUser = ref(false);
 
 // セッションを初期化（既にログイン済みの場合は自動ログイン）
 initSession();
 
+onMounted(() => {
+  document.body.classList.add("no-scroll");
+});
+
+onUnmounted(() => {
+  document.body.classList.remove("no-scroll");
+});
+
 const handleSubmit = async () => {
   if (!nickname.value.trim()) {
-    errorMessage.value = 'ニックネームを入力してください';
+    errorMessage.value = "ニックネームを入力してください";
     return;
   }
 
   loading.value = true;
-  errorMessage.value = '';
+  errorMessage.value = "";
 
   try {
     // 既存のニックネームを検索
     const q = query(
-      collection(db, 'users'),
-      where('nickname', '==', nickname.value.trim())
+      collection(db, "users"),
+      where("nickname", "==", nickname.value.trim())
     );
     const querySnapshot = await getDocs(q);
 
@@ -87,21 +99,21 @@ const handleSubmit = async () => {
       await performLogin();
     }
   } catch (error) {
-    console.error('ユーザーチェックエラー:', error);
-    errorMessage.value = 'エラーが発生しました';
+    console.error("ユーザーチェックエラー:", error);
+    errorMessage.value = "エラーが発生しました";
     loading.value = false;
   }
 };
 
 const performLogin = async () => {
   const result = await login(nickname.value.trim());
-  
+
   if (result.success) {
-    router.push('/collection');
+    router.push("/collection");
   } else {
-    errorMessage.value = 'ログインに失敗しました';
+    errorMessage.value = "ログインに失敗しました";
   }
-  
+
   loading.value = false;
 };
 
@@ -121,6 +133,7 @@ const cancelRegistration = () => {
 <style scoped>
 .login-view {
   min-height: 100vh;
+  min-height: 100dvh;
   background: var(--bg-secondary);
   display: flex;
   align-items: center;
@@ -131,6 +144,7 @@ const cancelRegistration = () => {
 .login-container {
   width: 100%;
   max-width: 500px;
+  transform: translateY(-5vh);
 }
 
 /* ヘッダー */
@@ -149,14 +163,17 @@ const cancelRegistration = () => {
   margin-bottom: 0.5rem;
 }
 
-.subtitle {
-  font-size: 0.95rem;
-  color: var(--text-secondary);
-  font-weight: 400;
+.service-title {
+  font-size: 2rem;
+  padding-bottom: 2rem;
 }
 
 /* フォーム */
 .login-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
   background: var(--bg-primary);
   border: 2px solid var(--border-color);
   padding: 2rem;
@@ -181,7 +198,6 @@ input[type="text"] {
   border: 2px solid var(--border-color);
   color: var(--text-primary);
   font-size: 0.95rem;
-  font-family: 'Zen Kaku Gothic New', sans-serif;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
@@ -260,7 +276,6 @@ input[type="text"]::placeholder {
   padding: 0.85rem 1.25rem;
   font-size: 0.95rem;
   font-weight: 700;
-  font-family: 'Zen Kaku Gothic New', sans-serif;
   border: 2px solid var(--border-color);
   cursor: pointer;
   transition: all 0.2s ease;
@@ -290,7 +305,6 @@ input[type="text"]::placeholder {
   padding: 0.85rem 1.25rem;
   font-size: 0.95rem;
   font-weight: 700;
-  font-family: 'Zen Kaku Gothic New', sans-serif;
   background: var(--border-color);
   color: var(--bg-primary);
   border: 2px solid var(--border-color);
@@ -313,15 +327,15 @@ input[type="text"]::placeholder {
   .login-view {
     padding: 1rem;
   }
-  
+
   .header {
     padding: 1.5rem;
   }
-  
+
   .header h1 {
     font-size: 1.5rem;
   }
-  
+
   .login-form {
     padding: 1.5rem;
   }

@@ -63,19 +63,19 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-import { useAdmin } from '../composables/useAdmin';
-import SEManagement from '../components/admin/SEManagement.vue';
-import UserManagement from '../components/admin/UserManagement.vue';
-import Statistics from '../components/admin/Statistics.vue';
+import { ref, onMounted } from "vue";
+import { useRouter } from "vue-router";
+import { useAdmin } from "../composables/useAdmin";
+import SEManagement from "../components/admin/SEManagement.vue";
+import UserManagement from "../components/admin/UserManagement.vue";
+import Statistics from "../components/admin/Statistics.vue";
 
 const router = useRouter();
 const { isAuthenticated, checkAuth, login, logout } = useAdmin();
 
-const password = ref('');
-const errorMessage = ref('');
-const currentTab = ref('se');
+const password = ref("");
+const errorMessage = ref("");
+const currentTab = ref("se");
 
 onMounted(() => {
   // 認証状態をチェック
@@ -87,14 +87,14 @@ const handleLogin = () => {
   if (!result.success) {
     errorMessage.value = result.error;
   } else {
-    errorMessage.value = '';
-    password.value = '';
+    errorMessage.value = "";
+    password.value = "";
   }
 };
 
 const handleLogout = () => {
   logout();
-  router.push('/');
+  router.push("/");
 };
 </script>
 
@@ -140,7 +140,7 @@ const handleLogout = () => {
   width: 100%;
   padding: 0.85rem;
   font-size: 0.95rem;
-  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-family: "Zen Kaku Gothic New", sans-serif;
   border: 2px solid var(--border-color);
   background: var(--bg-secondary);
   color: var(--text-primary);
@@ -157,7 +157,7 @@ const handleLogout = () => {
   padding: 0.85rem 1.25rem;
   font-size: 0.95rem;
   font-weight: 700;
-  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-family: "Zen Kaku Gothic New", sans-serif;
   background: var(--border-color);
   color: var(--bg-primary);
   border: 2px solid var(--border-color);
@@ -200,7 +200,7 @@ const handleLogout = () => {
   padding: 0.5rem 1rem;
   font-size: 0.85rem;
   font-weight: 700;
-  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-family: "Zen Kaku Gothic New", sans-serif;
   background: var(--bg-primary);
   color: var(--border-color);
   border: 2px solid var(--border-color);
@@ -225,7 +225,7 @@ const handleLogout = () => {
   padding: 1rem;
   font-size: 0.95rem;
   font-weight: 700;
-  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-family: "Zen Kaku Gothic New", sans-serif;
   background: var(--bg-secondary);
   color: var(--text-secondary);
   border: none;

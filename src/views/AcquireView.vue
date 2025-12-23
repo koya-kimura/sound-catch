@@ -25,18 +25,18 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import { useSE } from '../composables/useSE';
+import { ref, onMounted } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { useSE } from "../composables/useSE";
 
 const route = useRoute();
 const router = useRouter();
 const { getSEById, getSEImageURL } = useSE();
 
 const success = ref(false);
-const seName = ref('');
+const seName = ref("");
 const imageUrl = ref(null);
-const errorMessage = ref('');
+const errorMessage = ref("");
 
 onMounted(async () => {
   // URLクエリパラメータから結果を取得
@@ -44,77 +44,83 @@ onMounted(async () => {
   const seIdParam = route.query.se_id;
   const errorParam = route.query.error;
 
-  console.log('Query params:', {
+  console.log("Query params:", {
     success: successParam,
     se_id: seIdParam,
     error: errorParam,
-    all: route.query
+    all: route.query,
   });
 
-  if (successParam === 'true') {
+  if (successParam === "true") {
     success.value = true;
-    
+
     if (seIdParam) {
-      console.log('[AcquireView] seIdParam:', seIdParam);
-      
+      console.log("[AcquireView] seIdParam:", seIdParam);
+
       // FirestoreからSE情報を取得
       const seResult = await getSEById(seIdParam);
-      console.log('[AcquireView] getSEById result:', seResult);
-      
+      console.log("[AcquireView] getSEById result:", seResult);
+
       if (seResult.success && seResult.se) {
         seName.value = seResult.se.name || `SE-${seIdParam}`;
-        console.log('[AcquireView] seName:', seName.value);
-        
+        console.log("[AcquireView] seName:", seName.value);
+
         // 画像を取得
-        console.log('[AcquireView] 画像を取得中...');
+        console.log("[AcquireView] 画像を取得中...");
         const imageResult = await getSEImageURL(seIdParam);
-        console.log('[AcquireView] getSEImageURL result:', imageResult);
-        
+        console.log("[AcquireView] getSEImageURL result:", imageResult);
+
         if (imageResult.success && imageResult.url) {
           imageUrl.value = imageResult.url;
-          console.log('[AcquireView] 画像URL設定成功:', imageUrl.value);
+          console.log("[AcquireView] 画像URL設定成功:", imageUrl.value);
         } else {
           // 画像が見つからない場合はsample.pngをフォールバック
-          console.log('[AcquireView] 画像が見つからない、sample.pngを試します');
-          const fallbackResult = await getSEImageURL('sample');
-          console.log('[AcquireView] sample.png result:', fallbackResult);
-          
+          console.log("[AcquireView] 画像が見つからない、sample.pngを試します");
+          const fallbackResult = await getSEImageURL("sample");
+          console.log("[AcquireView] sample.png result:", fallbackResult);
+
           if (fallbackResult.success && fallbackResult.url) {
             imageUrl.value = fallbackResult.url;
-            console.log('[AcquireView] sample.png設定成功:', imageUrl.value);
+            console.log("[AcquireView] sample.png設定成功:", imageUrl.value);
           } else {
-            console.log('[AcquireView] sample.pngも取得できませんでした');
+            console.log("[AcquireView] sample.pngも取得できませんでした");
           }
         }
       } else {
-        console.log('[AcquireView] SE情報の取得に失敗');
+        console.log("[AcquireView] SE情報の取得に失敗");
         seName.value = `SE-${seIdParam}`;
       }
     } else {
-      console.log('[AcquireView] seIdParamが空です');
-      seName.value = '不明なSE';
+      console.log("[AcquireView] seIdParamが空です");
+      seName.value = "不明なSE";
     }
   } else {
     success.value = false;
-    
-    if (errorParam === 'coming_soon') {
-      errorMessage.value = 'このSEはまだ準備中です（COMING SOON）';
-    } else if (errorParam === 'already_acquired') {
-      errorMessage.value = 'このSEは既に取得済みです';
-    } else if (errorParam === 'invalid_tag') {
-      errorMessage.value = `無効なタグIDです (tag_id: ${route.query.tag_id || 'なし'})`;
-    } else if (errorParam === 'unauthorized') {
-      errorMessage.value = 'ログインが必要です';
-    } else if (errorParam === 'missing_params') {
-      errorMessage.value = `パラメータが不足しています (tag_id: ${route.query.tag_id || 'なし'}, session_id: ${route.query.session_id ? '有' : 'なし'})`;
+
+    if (errorParam === "coming_soon") {
+      errorMessage.value = "このSEはまだ準備中です（COMING SOON）";
+    } else if (errorParam === "already_acquired") {
+      errorMessage.value = "このSEは既に取得済みです";
+    } else if (errorParam === "invalid_tag") {
+      errorMessage.value = `無効なタグIDです (tag_id: ${
+        route.query.tag_id || "なし"
+      })`;
+    } else if (errorParam === "unauthorized") {
+      errorMessage.value = "ログインが必要です";
+    } else if (errorParam === "missing_params") {
+      errorMessage.value = `パラメータが不足しています (tag_id: ${
+        route.query.tag_id || "なし"
+      }, session_id: ${route.query.session_id ? "有" : "なし"})`;
     } else {
-      errorMessage.value = `取得に失敗しました (エラー: ${errorParam || '不明'})`;
+      errorMessage.value = `取得に失敗しました (エラー: ${
+        errorParam || "不明"
+      })`;
     }
   }
 });
 
 const goToCollection = () => {
-  router.push('/collection');
+  router.push("/collection");
 };
 </script>
 
@@ -187,7 +193,7 @@ const goToCollection = () => {
   padding: 0.85rem 1.25rem;
   font-size: 0.95rem;
   font-weight: 700;
-  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-family: "Zen Kaku Gothic New", sans-serif;
   border: 2px solid var(--border-color);
   cursor: pointer;
   transition: all 0.2s ease;
@@ -221,15 +227,15 @@ const goToCollection = () => {
   .acquire-view {
     padding: 1rem;
   }
-  
+
   .result-card {
     padding: 2rem 1.5rem;
   }
-  
+
   .icon {
     font-size: 3rem;
   }
-  
+
   .result-card h2 {
     font-size: 1.25rem;
   }

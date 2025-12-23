@@ -1,7 +1,7 @@
 <template>
   <div class="collection-view">
     <header class="header">
-      <h1>Sound Catch</h1>
+      <h1>アカペラドン！</h1>
       <div class="user-info">
         <span class="nickname">{{ nickname }}</span>
         <button @click="handleLogout" class="btn-logout">ログアウト</button>
@@ -45,43 +45,57 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
-import { useAuth } from '../composables/useAuth';
-import { useSE } from '../composables/useSE';
-import SECard from '../components/SECard.vue';
-import { collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from '../firebase';
+import { ref, computed, onMounted, onUnmounted, watch } from "vue";
+import { useRouter, useRoute } from "vue-router";
+import { useAuth } from "../composables/useAuth";
+import { useSE } from "../composables/useSE";
+import SECard from "../components/SECard.vue";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { db } from "../firebase";
 
 const router = useRouter();
 const route = useRoute();
 const { nickname, userId, logout } = useAuth();
-const { seMaster, userSEs, loading, fetchSEMaster, fetchUserSEs, isSEAcquired, playSound, downloadSound, cleanup } = useSE();
+const {
+  seMaster,
+  userSEs,
+  loading,
+  fetchSEMaster,
+  fetchUserSEs,
+  isSEAcquired,
+  playSound,
+  downloadSound,
+  cleanup,
+} = useSE();
 
 const seMasterList = computed(() => {
   // seIdで昇順ソート（数値として比較）
-  return [...seMaster.value].sort((a, b) => {
-    const idA = parseInt(a.seId) || 0;
-    const idB = parseInt(b.seId) || 0;
-    return idA - idB;
-  }).map(se => {
-    // publishedがfalseまたは未設定の場合、COMING SOONとして扱う
-    const isPublished = se.published === true;
-    return {
-      ...se,
-      comingSoon: !isPublished
-    };
-  });
+  return [...seMaster.value]
+    .sort((a, b) => {
+      const idA = parseInt(a.seId) || 0;
+      const idB = parseInt(b.seId) || 0;
+      return idA - idB;
+    })
+    .map((se) => {
+      // publishedがfalseまたは未設定の場合、COMING SOONとして扱う
+      const isPublished = se.published === true;
+      return {
+        ...se,
+        comingSoon: !isPublished,
+      };
+    });
 });
 
 // COMING SOONを除外した総数
-const totalCount = computed(() => 
-  seMasterList.value.filter(se => !se.comingSoon).length
+const totalCount = computed(
+  () => seMasterList.value.filter((se) => !se.comingSoon).length
 );
 
 const acquiredCount = computed(() => userSEs.value.length);
-const completionRate = computed(() => 
-  totalCount.value > 0 ? Math.round((acquiredCount.value / totalCount.value) * 100) : 0
+const completionRate = computed(() =>
+  totalCount.value > 0
+    ? Math.round((acquiredCount.value / totalCount.value) * 100)
+    : 0
 );
 
 const quizCorrectCount = ref(0);
@@ -90,19 +104,19 @@ const answeredQuizzes = ref([]);
 // クイズ正解数を取得
 const fetchQuizScore = async () => {
   if (!userId.value) return;
-  
+
   try {
-    const userQuizRef = collection(db, 'user_quiz_scores');
-    const q = query(userQuizRef, where('userId', '==', userId.value));
+    const userQuizRef = collection(db, "user_quiz_scores");
+    const q = query(userQuizRef, where("userId", "==", userId.value));
     const querySnapshot = await getDocs(q);
-    
+
     if (!querySnapshot.empty) {
       const userData = querySnapshot.docs[0].data();
       quizCorrectCount.value = userData.correctAnswers || 0;
       answeredQuizzes.value = userData.answeredQuizzes || [];
     }
   } catch (error) {
-    console.error('クイズ正解数取得エラー:', error);
+    console.error("クイズ正解数取得エラー:", error);
   }
 };
 
@@ -112,7 +126,7 @@ const handlePlay = async (se, callbacks) => {
     callbacks.onProgress,
     callbacks.onEnded
   );
-  
+
   if (result.success && result.audio) {
     callbacks.onAudio(result.audio);
   }
@@ -121,27 +135,27 @@ const handlePlay = async (se, callbacks) => {
 const handleDownload = async (se) => {
   const result = await downloadSound(se.seId, se.name);
   if (!result.success) {
-    alert('ダウンロードに失敗しました');
+    alert("ダウンロードに失敗しました");
   }
 };
 
 const handleQuizAnswered = async (data) => {
-  console.log('[handleQuizAnswered] クイズ回答を受信:', data);
+  console.log("[handleQuizAnswered] クイズ回答を受信:", data);
   if (data.isCorrect) {
     // 正解数を再取得
     await fetchQuizScore();
-    console.log('[handleQuizAnswered] 正解数を更新:', quizCorrectCount.value);
+    console.log("[handleQuizAnswered] 正解数を更新:", quizCorrectCount.value);
   }
 };
 
 const handleLogout = () => {
   logout();
-  router.push('/login');
+  router.push("/login");
 };
 
 const loadData = async () => {
   fetchSEMaster(); // リアルタイム監視開始
-  
+
   if (userId.value) {
     await fetchUserSEs(userId.value);
     await fetchQuizScore();
@@ -157,12 +171,15 @@ onUnmounted(() => {
 });
 
 // ルートが変更され、このコンポーネントに戻ってきたときにデータを再読み込み
-watch(() => route.path, (newPath, oldPath) => {
-  if (newPath === '/collection' && oldPath && oldPath !== '/collection') {
-    console.log('コレクション画面に戻りました。データを再読み込みします。');
-    loadData();
+watch(
+  () => route.path,
+  (newPath, oldPath) => {
+    if (newPath === "/collection" && oldPath && oldPath !== "/collection") {
+      console.log("コレクション画面に戻りました。データを再読み込みします。");
+      loadData();
+    }
   }
-});
+);
 </script>
 
 <style scoped>
@@ -203,7 +220,7 @@ watch(() => route.path, (newPath, oldPath) => {
   padding: 0.5rem 1rem;
   font-size: 0.85rem;
   font-weight: 700;
-  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-family: "Zen Kaku Gothic New", sans-serif;
   background: var(--bg-primary);
   color: var(--border-color);
   border: 2px solid var(--border-color);
@@ -218,8 +235,8 @@ watch(() => route.path, (newPath, oldPath) => {
 /* コンテナ */
 .container {
   max-width: 1200px;
+  padding: 2rem 0;
   margin: 0 auto;
-  padding: 2rem;
 }
 
 /* 統計情報 */
@@ -270,20 +287,28 @@ watch(() => route.path, (newPath, oldPath) => {
 /* レスポンシブ */
 @media (max-width: 768px) {
   .container {
-    padding: 1rem;
+    padding: 1rem 0;
   }
-  
+
   .se-grid {
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: 0.75rem;
   }
-  
+
   .header {
     padding: 1.5rem 1rem;
   }
-  
+
   .header h1 {
     font-size: 1.5rem;
+  }
+
+  .stat-value {
+    font-size: 1rem;
+  }
+
+  .stat-item {
+    padding: 0.5rem;
   }
 }
 </style>
