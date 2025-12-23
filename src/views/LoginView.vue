@@ -350,5 +350,9 @@ input[type="text"]::placeholder {
     font-size: 2rem;
     padding-bottom: 0rem;
   }
+
+  input[type="text"]::placeholder {
+    font-size: 0.7rem;
+  }
 }
 </style>

@@ -1,11 +1,18 @@
 <template>
-  <div class="se-card" :class="{ acquired: acquired && !comingSoon, 'coming-soon': comingSoon }">
+  <div
+    class="se-card"
+    :class="{ acquired: acquired && !comingSoon, 'coming-soon': comingSoon }"
+  >
     <div class="se-controls">
       <!-- 画像兼再生ボタン -->
-      <button @click="handlePlay" class="btn-play-image" :disabled="!acquired || comingSoon">
-        <img 
-          v-if="imageUrl" 
-          :src="imageUrl" 
+      <button
+        @click="handlePlay"
+        class="btn-play-image"
+        :disabled="!acquired || comingSoon"
+      >
+        <img
+          v-if="imageUrl"
+          :src="imageUrl"
           :alt="se.name"
           class="play-image"
           :class="{ playing: isPlaying, locked: !acquired }"
@@ -13,71 +20,79 @@
         <div v-else class="play-placeholder">
           <span>{{ se.name }}</span>
         </div>
-        
+
         <!-- COMING SOONオーバーレイ -->
         <div v-if="comingSoon" class="coming-soon-overlay">
           <span class="coming-soon-text">COMING SOON</span>
         </div>
-        
+
         <!-- 未取得オーバーレイ -->
         <div v-else-if="!acquired" class="locked-overlay">
           <span class="locked-text">未取得</span>
         </div>
-        
-        <!-- 再生中のオーバーレイ -->
-        <div v-if="isPlaying && acquired" class="play-overlay">
-          <div class="progress-bar">
-            <div class="progress-fill" :style="{ width: `${progress}%` }"></div>
-          </div>
-          <div class="time-display">
-            {{ formatTime(currentTime) }} / {{ formatTime(duration) }}
-          </div>
+
+        <!-- ステータス表示 -->
+        <div v-if="acquired" class="status-overlay">
+          <span class="status-text">{{ isPlaying ? "再生中" : "再生" }}</span>
         </div>
       </button>
-      
+
       <!-- ダウンロードボタン -->
-      <button @click="handleDownload" class="btn-download" :disabled="!acquired || comingSoon">
+      <button
+        @click="handleDownload"
+        class="btn-download"
+        :disabled="!acquired || comingSoon"
+      >
         ダウンロード
       </button>
 
       <!-- クイズボタン -->
-      <button @click="handleQuiz" class="btn-quiz" :class="{ answered: isQuizAnswered }" :disabled="!acquired || comingSoon">
+      <button
+        @click="handleQuiz"
+        class="btn-quiz"
+        :class="{ answered: isQuizAnswered }"
+        :disabled="!acquired || comingSoon"
+      >
         <span v-if="isQuizAnswered">✓ 正解済み</span>
         <span v-else>クイズ</span>
       </button>
     </div>
 
     <!-- クイズモーダル -->
-    <div v-if="showQuizModal" class="quiz-modal-overlay" @click="closeQuizModal">
+    <div
+      v-if="showQuizModal"
+      class="quiz-modal-overlay"
+      @click="closeQuizModal"
+    >
       <div class="quiz-modal" @click.stop>
         <!-- 閉じるボタン -->
         <button class="quiz-close-btn" @click="closeQuizModal">×</button>
-        
-        <h3>{{ se.quizQuestion || 'この曲はなんでしょう？' }}</h3>
-        <input 
-          v-model="quizAnswer" 
-          type="text" 
+
+        <h3>{{ se.quizQuestion || "この曲はなんでしょう？" }}</h3>
+        <input
+          v-model="quizAnswer"
+          type="text"
           placeholder="回答を入力してください"
           class="quiz-input"
           @keyup.enter="submitQuiz"
           :disabled="isQuizSubmitting || !!quizResult"
         />
-        
+
         <!-- 結果表示 -->
         <div v-if="quizResult" class="quiz-result">
           {{ quizResult }}
         </div>
-        
+
         <div class="quiz-buttons">
-          <button 
-            @click="submitQuiz" 
+          <button
+            @click="submitQuiz"
             class="btn-submit"
             :disabled="isQuizSubmitting || !!quizResult || !quizAnswer.trim()"
           >
-            {{ isQuizSubmitting ? '送信中...' : '回答する' }}
+            {{ isQuizSubmitting ? "送信中..." : "回答する" }}
           </button>
-          <button 
-            @click="closeQuizModal" 
+          <button
+            @click="closeQuizModal"
             class="btn-cancel"
             :disabled="isQuizSubmitting"
           >
@@ -90,30 +105,30 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import { useSE } from '../composables/useSE';
-import { useAuth } from '../composables/useAuth';
+import { ref, onMounted } from "vue";
+import { useSE } from "../composables/useSE";
+import { useAuth } from "../composables/useAuth";
 
 const props = defineProps({
   se: {
     type: Object,
-    required: true
+    required: true,
   },
   acquired: {
     type: Boolean,
-    default: false
+    default: false,
   },
   comingSoon: {
     type: Boolean,
-    default: false
+    default: false,
   },
   isQuizAnswered: {
     type: Boolean,
-    default: false
-  }
+    default: false,
+  },
 });
 
-const emit = defineEmits(['play', 'download', 'quiz-answered']);
+const emit = defineEmits(["play", "download", "quiz-answered"]);
 
 const { getSEImageURL, saveQuizAnswer } = useSE();
 const { userId } = useAuth();
@@ -125,21 +140,21 @@ const currentTime = ref(0);
 const duration = ref(0);
 const imageUrl = ref(null);
 const showQuizModal = ref(false);
-const quizAnswer = ref('');
-const quizResult = ref('');
+const quizAnswer = ref("");
+const quizResult = ref("");
 const isQuizSubmitting = ref(false);
 
 // 画像URLを取得
 const loadImage = async () => {
   // まず実際のSE画像を試す
   const result = await getSEImageURL(props.se.seId);
-  
+
   if (result.success && result.url) {
     // 実際の画像が存在する場合はそれを使用
     imageUrl.value = result.url;
   } else if (!props.acquired) {
     // 画像が存在せず、未取得の場合のみsample.pngを使用
-    const fallbackResult = await getSEImageURL('sample');
+    const fallbackResult = await getSEImageURL("sample");
     if (fallbackResult.success && fallbackResult.url) {
       imageUrl.value = fallbackResult.url;
     }
@@ -148,11 +163,13 @@ const loadImage = async () => {
 };
 
 const handlePlay = async () => {
-  // 再生中の場合、停止して最初から再生
+  // 再生中の場合、停止して終了
   if (currentAudio.value) {
     currentAudio.value.pause();
     currentAudio.value.currentTime = 0;
     currentAudio.value = null;
+    isPlaying.value = false;
+    return;
   }
 
   isPlaying.value = true;
@@ -162,7 +179,7 @@ const handlePlay = async () => {
 
   // 親コンポーネントから返されるresultを受け取る
   // emitは値を返さないので、別の方法で処理
-  emit('play', props.se, {
+  emit("play", props.se, {
     onProgress: (info) => {
       progress.value = info.progress;
       currentTime.value = info.currentTime;
@@ -171,61 +188,65 @@ const handlePlay = async () => {
     onEnded: () => {
       isPlaying.value = false;
       progress.value = 0;
+      currentAudio.value = null;
     },
     onAudio: (audio) => {
       currentAudio.value = audio;
-    }
+    },
   });
 };
 
 const handleDownload = () => {
-  emit('download', props.se);
+  emit("download", props.se);
 };
 
 const handleQuiz = () => {
   showQuizModal.value = true;
-  quizAnswer.value = '';
-  quizResult.value = '';
+  quizAnswer.value = "";
+  quizResult.value = "";
 };
 
 const closeQuizModal = () => {
   showQuizModal.value = false;
-  quizAnswer.value = '';
-  quizResult.value = '';
+  quizAnswer.value = "";
+  quizResult.value = "";
 };
 
 const submitQuiz = async () => {
   if (isQuizSubmitting.value) return;
-  
+
   isQuizSubmitting.value = true;
-  
+
   try {
     const isCorrect = quizAnswer.value === props.se.quizAnswer;
     const result = await saveQuizAnswer(userId.value, props.se.seId, isCorrect);
-    
+
     if (result.success) {
       if (isCorrect) {
         quizResult.value = `${result.message} 正解数: ${result.correctCount}`;
-        emit('quiz-answered', { isCorrect: true, correctCount: result.correctCount });
+        emit("quiz-answered", {
+          isCorrect: true,
+          correctCount: result.correctCount,
+        });
       } else {
         quizResult.value = result.message;
       }
     } else {
-      quizResult.value = 'エラーが発生しました';
+      quizResult.value = "エラーが発生しました";
     }
   } catch (error) {
-    console.error('クイズ送信エラー:', error);
-    quizResult.value = 'エラーが発生しました';
+    console.error("クイズ送信エラー:", error);
+    quizResult.value = "エラーが発生しました";
   }
-  
+
   isQuizSubmitting.value = false;
 };
 
 const formatTime = (seconds) => {
-  if (isNaN(seconds)) return '0:00';
+  if (isNaN(seconds)) return "0:00";
   const mins = Math.floor(seconds / 60);
   const secs = Math.floor(seconds % 60);
-  return `${mins}:${secs.toString().padStart(2, '0')}`;
+  return `${mins}:${secs.toString().padStart(2, "0")}`;
 };
 
 onMounted(() => {
@@ -268,7 +289,7 @@ onMounted(() => {
   padding: 0;
   font-size: 0.95rem;
   font-weight: 700;
-  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-family: "Zen Kaku Gothic New", sans-serif;
   border: none;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -365,31 +386,23 @@ onMounted(() => {
   border-color: var(--border-color);
 }
 
-/* 再生中のオーバーレイ */
-.play-overlay {
+/* ステータスオーバーレイ */
+.status-overlay {
   position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
-  background: rgba(0, 0, 0, 0.7);
-  padding: 0.75rem;
+  background: rgba(0, 0, 0, 0.6);
+  padding: 0.2rem;
   display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
+  justify-content: center;
+  align-items: center;
 }
 
-/* 進捗バー（オーバーレイ内） */
-.progress-bar {
-  width: 100%;
-  height: 4px;
-  background: rgba(255, 255, 255, 0.3);
-  overflow: hidden;
-}
-
-.progress-fill {
-  height: 100%;
-  background: var(--bg-primary);
-  transition: width 0.1s linear;
+.status-text {
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 700;
 }
 
 /* 時間表示（オーバーレイ内） */
@@ -407,7 +420,7 @@ onMounted(() => {
   padding: 0.85rem 1.25rem;
   font-size: 0.95rem;
   font-weight: 700;
-  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-family: "Zen Kaku Gothic New", sans-serif;
   background: var(--bg-primary);
   color: var(--border-color);
   border: 2px solid var(--border-color);
@@ -432,7 +445,7 @@ onMounted(() => {
   padding: 0.85rem 1.25rem;
   font-size: 0.95rem;
   font-weight: 700;
-  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-family: "Zen Kaku Gothic New", sans-serif;
   background: var(--bg-primary);
   color: var(--border-color);
   border: 2px solid var(--border-color);
@@ -521,7 +534,7 @@ onMounted(() => {
   width: 100%;
   padding: 0.85rem;
   font-size: 0.95rem;
-  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-family: "Zen Kaku Gothic New", sans-serif;
   border: 2px solid var(--border-color);
   background: var(--bg-secondary);
   color: var(--text-primary);
@@ -558,7 +571,7 @@ onMounted(() => {
   padding: 0.85rem 1.25rem;
   font-size: 0.95rem;
   font-weight: 700;
-  font-family: 'Zen Kaku Gothic New', sans-serif;
+  font-family: "Zen Kaku Gothic New", sans-serif;
   border: 2px solid var(--border-color);
   cursor: pointer;
   transition: all 0.2s ease;
@@ -591,5 +604,17 @@ onMounted(() => {
 .btn-cancel:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .btn-download {
+    padding: 0.5rem 1rem;
+    font-size: 0.7rem;
+  }
+
+  .btn-quiz {
+    padding: 0.5rem 1rem;
+    font-size: 0.7rem;
+  }
 }
 </style>
