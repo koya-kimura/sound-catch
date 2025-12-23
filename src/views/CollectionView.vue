@@ -71,6 +71,11 @@ const {
 const seMasterList = computed(() => {
   // seIdで昇順ソート（数値として比較）
   return [...seMaster.value]
+    .filter((se) => {
+      // ID 20以降は非表示（フロントエンド側で制限）
+      const id = parseInt(se.seId) || 0;
+      return id < 20;
+    })
     .sort((a, b) => {
       const idA = parseInt(a.seId) || 0;
       const idB = parseInt(b.seId) || 0;
