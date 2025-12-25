@@ -74,7 +74,7 @@ const seMasterList = computed(() => {
     .filter((se) => {
       // ID 20以降は非表示（フロントエンド側で制限）
       const id = parseInt(se.seId) || 0;
-      return id < 20;
+      return id < 21;
     })
     .sort((a, b) => {
       const idA = parseInt(a.seId) || 0;
